@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <unistd.h>
+#include <sys/wait.h>
 #include <vector>
 
 #define WRITEEND 1
@@ -27,8 +28,8 @@ int exec_fork(std::string command, std::vector<std::string> args, std::array<int
             return -1;
             break;
         case 0:
-            dup2(filedescriptors[WRITEEND], STDOUT_FILENO);
-            dup2(filedescriptors[READEND], STDIN_FILENO);
+            /* dup2(filedescriptors[WRITEEND], STDOUT_FILENO); */
+            /* dup2(filedescriptors[READEND], STDIN_FILENO); */
             close(filedescriptors[WRITEEND]);
             close(filedescriptors[READEND]);
             execvp(command.c_str(), c_args);
@@ -51,9 +52,13 @@ int main (void) {
         return -1;
     }
     std::array<int,2> fd1({STDIN_FILENO,fd[WRITEEND]});
-    exec_fork(command, args, fd1);
+    int child_pid = exec_fork(command, args, fd1);
+    //does not work
+    waitpid(child_pid, nullptr, WNOHANG);
+    
     std::array<int,2> fd2({fd[READEND],STDOUT_FILENO});
-    exec_fork(command, args, fd);
+    child_pid = exec_fork(command, args, fd);
+    waitpid(child_pid, nullptr, WNOHANG);
     
     std::cout << "after execution\n";
     return 0;
