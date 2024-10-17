@@ -7,14 +7,14 @@
 #include <sys/wait.h>
 #include <vector>
 
-#define WRITEEND 1
-#define READEND 0
+#define WRITE_END 1
+#define READ_END 0
 // currently available shell - cash
 
 // executes the command in the path with the current environment
 //
 // returns the pid of the child
-int exec_fork(std::string command, std::vector<std::string> args, std::array<int,2> filedescriptors) {
+int exec(std::string command, std::vector<std::string> args) {
     char **c_args;
     c_args = (char **) malloc(sizeof(char*) * (args.size() + 2));
     c_args[0] = command.data();
@@ -22,43 +22,64 @@ int exec_fork(std::string command, std::vector<std::string> args, std::array<int
         c_args[i+1] = args.at(i).data();
     }
     c_args[args.size() + 1] = nullptr;
-    int pid = fork();
-    switch (pid) {
-        case -1:
-            return -1;
-            break;
-        case 0:
-            /* dup2(filedescriptors[WRITEEND], STDOUT_FILENO); */
-            /* dup2(filedescriptors[READEND], STDIN_FILENO); */
-            close(filedescriptors[WRITEEND]);
-            close(filedescriptors[READEND]);
-            execvp(command.c_str(), c_args);
-            return -1;
-            break;
-        default:
-            free((void*) c_args);
-            return pid;
-    }
+    return execvp(command.c_str(), c_args);
 }
 
 int main (void) {
-    std::string command = "ls";
-    std::vector<std::string> args = std::vector<std::string>({"-l"});
-    std::string command2 = "wc";
-    std::vector<std::string> args2 = std::vector<std::string>();
     std::array<int,2> fd;
     int error = pipe(fd.data());
     if (error == -1) {
-        return -1;
+        exit(1);
     }
-    std::array<int,2> fd1({STDIN_FILENO,fd[WRITEEND]});
-    int child_pid = exec_fork(command, args, fd1);
-    //does not work
-    waitpid(child_pid, nullptr, WNOHANG);
-    
-    std::array<int,2> fd2({fd[READEND],STDOUT_FILENO});
-    child_pid = exec_fork(command, args, fd);
-    waitpid(child_pid, nullptr, WNOHANG);
+    std::string command = "ls";
+    std::vector<std::string> args = std::vector<std::string>({"-l"});
+    int pid = fork();
+    if(pid==0)
+    {
+        dup2(fd[WRITE_END], STDOUT_FILENO);
+        close(fd[READ_END]);
+        close(fd[WRITE_END]);
+        exec(command, args);
+        exit(1);
+    }
+    waitpid(pid, nullptr, WNOHANG);
+
+    std::array<int,2> fd2;
+    error = pipe(fd2.data());
+    if (error == -1) {
+        exit(1);
+    }
+
+    command = "sort";
+    args = std::vector<std::string>();
+    pid=fork();
+    if(pid==0)
+    {
+        close(fd[WRITE_END]);
+        close(fd2[READ_END]);
+        dup2(fd[READ_END], STDIN_FILENO);
+        dup2(fd2[WRITE_END], STDOUT_FILENO);
+        close(fd[READ_END]);
+        close(fd2[WRITE_END]);
+        exec(command, args);
+        exit(1);
+    }
+    waitpid(pid, nullptr, WNOHANG);
+    command = "base64";
+    args = std::vector<std::string>();
+    pid=fork();
+    if(pid==0)
+    {
+        dup2(fd2[READ_END], STDIN_FILENO);
+        close(fd2[WRITE_END]);
+        close(fd2[READ_END]);
+        exec(command, args);
+        exit(1);
+    }
+
+    close(fd[READ_END]);
+    close(fd[WRITE_END]);
+    waitpid(pid, nullptr, WNOHANG);
     
     std::cout << "after execution\n";
     return 0;

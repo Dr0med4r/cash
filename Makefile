@@ -4,7 +4,7 @@ OBJ = ${SRC:.cc=.o}
 BIN = cash
 
 
-CXXFLAGS= -Wall -Wextra
+CXXFLAGS= -Wall -Wextra -g
 
 ${BIN}: ${OBJ}
 	${CXX} ${OBJ} -o ${BIN}
