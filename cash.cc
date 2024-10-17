@@ -22,11 +22,14 @@ int exec(std::string command, std::vector<std::string> args) {
         c_args[i+1] = args.at(i).data();
     }
     c_args[args.size() + 1] = nullptr;
-    return execvp(command.c_str(), c_args);
+    int status = execvp(command.c_str(), c_args);
+    free(c_args);
+    return status;
 }
 
 int main (void) {
     std::array<int,2> fd;
+    std::array<int,2> fd2;
     int error = pipe(fd.data());
     if (error == -1) {
         exit(1);
@@ -42,9 +45,8 @@ int main (void) {
         exec(command, args);
         exit(1);
     }
-    waitpid(pid, nullptr, WNOHANG);
+    /* waitpid(pid, nullptr, WNOHANG); */
 
-    std::array<int,2> fd2;
     error = pipe(fd2.data());
     if (error == -1) {
         exit(1);
@@ -57,19 +59,24 @@ int main (void) {
     {
         close(fd[WRITE_END]);
         close(fd2[READ_END]);
+        //input from fd
         dup2(fd[READ_END], STDIN_FILENO);
+        //output to fd2
         dup2(fd2[WRITE_END], STDOUT_FILENO);
         close(fd[READ_END]);
         close(fd2[WRITE_END]);
         exec(command, args);
         exit(1);
     }
-    waitpid(pid, nullptr, WNOHANG);
+    // close fd
+    close(fd[READ_END]);
+    close(fd[WRITE_END]);
     command = "base64";
     args = std::vector<std::string>();
     pid=fork();
     if(pid==0)
     {
+        //input from fd2
         dup2(fd2[READ_END], STDIN_FILENO);
         close(fd2[WRITE_END]);
         close(fd2[READ_END]);
@@ -77,8 +84,8 @@ int main (void) {
         exit(1);
     }
 
-    close(fd[READ_END]);
-    close(fd[WRITE_END]);
+    close(fd2[READ_END]);
+    close(fd2[WRITE_END]);
     waitpid(pid, nullptr, WNOHANG);
     
     std::cout << "after execution\n";
