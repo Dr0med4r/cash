@@ -14,16 +14,21 @@
 
 typedef int fd;
 
-struct Command {
+class Command {
     std::string call;
     std::vector<std::string> args;
-    fd input;
-    fd output;
+
+public:
+  Command(std::string call, std::vector<std::string> args)
+      : call(std::move(call)), args(std::move(args)) {}
+  Command(const Command &) = default;
+  Command(Command &&) = default;
+  Command &operator=(const Command &) = default;
+  Command &operator=(Command &&) = default;
+
+  int exec(fd input, fd output);
 };
 
-void exec_pipes(std::vector<Command>) {
-
-}
 
 
 // executes the command in the path with the current environment
@@ -31,24 +36,24 @@ void exec_pipes(std::vector<Command>) {
 // returns the pid of the child
 //
 // closes the given filedescriptors if they are not stdin or stdout
-int exec(Command cmd) {
+int Command::exec(fd input, fd output) {
     char **c_args;
-    c_args = (char **) malloc(sizeof(char*) * (cmd.args.size() + 2));
-    c_args[0] = cmd.call.data();
-    for(size_t i = 0; i<cmd.args.size();i++) {
-        c_args[i+1] = cmd.args.at(i).data();
+    c_args = (char **) malloc(sizeof(char*) * (args.size() + 2));
+    c_args[0] = call.data();
+    for(size_t i = 0; i<args.size();i++) {
+        c_args[i+1] = args.at(i).data();
     }
-    c_args[cmd.args.size() + 1] = nullptr;
+    c_args[args.size() + 1] = nullptr;
     // input from input and output to output
-    if (cmd.input != STDIN_FILENO) {
-        dup2(cmd.input, STDIN_FILENO);
-        close(cmd.input);
+    if (input != STDIN_FILENO) {
+        dup2(input, STDIN_FILENO);
+        close(input);
     }
-    if (cmd.output != STDOUT_FILENO) {
-        dup2(cmd.output, STDOUT_FILENO);
-        close(cmd.output);
+    if (output != STDOUT_FILENO) {
+        dup2(output, STDOUT_FILENO);
+        close(output);
     }
-    int status = execvp(cmd.call.c_str(), c_args);
+    int status = execvp(call.c_str(), c_args);
     free(c_args);
     return status;
 }
@@ -66,43 +71,45 @@ int main (void) {
     }
 
     std::vector<std::string> args = std::vector<std::string>({"-l"});
-    Command a = {"ls", args, STDIN_FILENO,fd[WRITE_END]};
+    Command a("ls", args);
     int pid = fork();
     if(pid==0)
     {
         close(fd[READ_END]);
-        exec(a);
+        a.exec(STDIN_FILENO,fd[WRITE_END]);
         exit(1);
     }
     /* waitpid(pid, nullptr, WNOHANG); */
     args = std::vector<std::string>();
-    a = {"sort", args, fd[READ_END], fd2[WRITE_END]};
+    a = {"sort", args};
     pid=fork();
     if(pid==0)
     {
         // always close all pipe fds that are not used in exec
         close(fd[WRITE_END]);
         close(fd2[READ_END]);
-        exec(a);
+        a.exec(fd[READ_END], fd2[WRITE_END]);
         exit(1);
     }
     // close fd
     close(fd[READ_END]);
     close(fd[WRITE_END]);
     args = std::vector<std::string>();
-    a = {"base64", args, fd2[READ_END], STDOUT_FILENO};
+    a = {"base64", args};
     pid=fork();
     if(pid==0)
     {
         close(fd2[WRITE_END]);
-        exec(a);
+        a.exec(fd2[READ_END], STDOUT_FILENO);
         exit(1);
     }
 
     //close fd2
     close(fd2[READ_END]);
     close(fd2[WRITE_END]);
-    waitpid(pid, nullptr, WNOHANG);
+    std::cout << "pid: " << pid << "\n";
+    int status;
+    waitpid(pid, &status, 0);
     
     std::cout << "after execution\n";
     return 0;
