@@ -17,6 +17,7 @@ public:
   Call &operator=(Call &&) = default;
   Call(std::string call, std::vector<std::string> args)
       : command(std::move(call)), args(std::move(args)) {}
+  ~Call() = default;
 
   int exec(fd input, fd output);
 };
@@ -32,8 +33,10 @@ public:
   Command &operator=(const Command &) = default;
   Command &operator=(Command &&) = default;
   Command() {}
+  ~Command() = default;
   bool set_input(fd input);
-  bool set_output(fd output);
+  bool set_output(fd output); 
+  bool has_valid_output();
   void add_call(Call call);
   void exec(bool wait = true);
 };

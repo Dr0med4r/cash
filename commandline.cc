@@ -1,8 +1,21 @@
 #include "commandline.h"
 #include <array>
 #include <fcntl.h>
+#include <iostream>
 #include <sys/wait.h>
 #include <unistd.h>
+
+// close fd if not stdin or stdout
+//
+// returns -1 on close error
+// 0 on success and 1 on stdfile
+int close_fd(int fd) {
+  if (fd != STDIN_FILENO && fd != STDOUT_FILENO) {
+    return close(fd);
+  }
+  return 1;
+}
+
 // executes the command in the path with the current environment
 //
 // returns the pid of the child
@@ -17,14 +30,11 @@ int Call::exec(fd input, fd output) {
   }
   c_args[args.size() + 1] = nullptr;
   // input from input and output to output
-  if (input != STDIN_FILENO) {
-    dup2(input, STDIN_FILENO);
-    close(input);
-  }
-  if (output != STDOUT_FILENO) {
-    dup2(output, STDOUT_FILENO);
-    close(output);
-  }
+  // dup2 does nothing if fd and fd2 are the same
+  dup2(input, STDIN_FILENO);
+  close_fd(input);
+  dup2(output, STDOUT_FILENO);
+  close_fd(output);
   int status = execvp(command.c_str(), c_args);
   free(c_args);
   return status;
@@ -47,8 +57,16 @@ bool Command::set_output(fd output) {
 }
 
 void Command::add_call(Call call) { calls.push_back(call); }
+bool Command::has_valid_output() { return input != -1 && output != -1; }
 
+// executes all given commands with pipes and the given input and output
+// redirection
+//
+// closes input and output fds if not stdfile
 void Command::exec(bool wait) {
+  if (!has_valid_output()) {
+    std::cout << "do not use without working filedescriptors!\n";
+  }
   int pid = -1;
   switch (calls.size()) {
   case 0:
@@ -59,71 +77,47 @@ void Command::exec(bool wait) {
       calls.at(0).exec(input, output);
     }
   } break;
-  case 2: {
-    std::array<int, 2> fd;
-    int error = pipe(fd.data());
-    if (error == -1) {
-      exit(1);
-    }
-    pid = fork();
-    if (pid == 0) {
-      close(fd[READ_END]);
-      calls.at(0).exec(input, fd[WRITE_END]);
-    }
-    pid = fork();
-    if (pid == 0) {
-      close(fd[WRITE_END]);
-      calls.at(1).exec(fd[READ_END], output);
-    }
-    close(fd[WRITE_END]);
-    close(fd[READ_END]);
-  } break;
   default: {
+    std::array<int, 2> fd1 = {input, 0};
+    std::array<int, 2> fd2 = {0, output};
+    std::array<std::array<int, 2>, 2> fds = {fd1, fd2};
+    int which_pipe = 0;
+    // alternate between the two pipes as input and output
+    for (size_t i = 0; i < calls.size(); i++) {
+      which_pipe = 1 - which_pipe;
+      int this_pipe = which_pipe;
+      int other_pipe = 1 - which_pipe;
+      int error = pipe(fds[this_pipe].data());
+      if (error == -1) {
+        // TODO Error Handling
+        return;
+      }
+      if (i == calls.size() - 1) {
+        fds[this_pipe][WRITE_END] = output;
+        /* std::cout << "output to: " << output << "\n"; */
+      }
+      pid = fork();
+      if (pid == 0) {
+        close_fd(fds[other_pipe][WRITE_END]);
+        close_fd(fds[this_pipe][READ_END]);
+        calls.at(i).exec(fds[other_pipe][READ_END], fds[this_pipe][WRITE_END]);
+      }
+      for (int fd : fds[other_pipe]) {
+        close_fd(fd);
+      }
+    }
+    for (auto arr : fds) {
+      for (int fd : arr) {
+        close_fd(fd);
+      }
+    }
 
   } break;
   }
+  // as the input and output are closed now do not use them again
+  input = -1;
+  output = -1;
   if (wait && pid > 0) {
     waitpid(pid, nullptr, NO_OPTION);
   }
-  /* std::array<int, 2> fd; */
-  /* std::array<int, 2> fd2; */
-  /* int error = pipe(fd2.data()); */
-  /* if (error == -1) { */
-  /*   exit(1); */
-  /* } */
-  /**/
-  /* std::vector<std::string> args = std::vector<std::string>({"-l"}); */
-  /* Call a("ls", args); */
-  /* int pid = fork(); */
-  /* if (pid == 0) { */
-  /*   close(fd[READ_END]); */
-  /*   a.exec(STDIN_FILENO, fd[WRITE_END]); */
-  /*   exit(1); */
-  /* } */
-  /* waitpid(pid, nullptr, WNOHANG); */
-  /* args = std::vector<std::string>(); */
-  /* a = {"sort", args}; */
-  /* pid = fork(); */
-  /* if (pid == 0) { */
-  /*   // always close all pipe fds that are not used in exec */
-  /*   close(fd[WRITE_END]); */
-  /*   close(fd2[READ_END]); */
-  /*   a.exec(fd[READ_END], fd2[WRITE_END]); */
-  /*   exit(1); */
-  /* } */
-  /* // close fd */
-  /* close(fd[READ_END]); */
-  /* close(fd[WRITE_END]); */
-  /* args = std::vector<std::string>(); */
-  /* a = {"base64", args}; */
-  /* pid = fork(); */
-  /* if (pid == 0) { */
-  /*   close(fd2[WRITE_END]); */
-  /*   a.exec(fd2[READ_END], STDOUT_FILENO); */
-  /*   exit(1); */
-  /* } */
-  /**/
-  /* // close fd2 */
-  /* close(fd2[READ_END]); */
-  /* close(fd2[WRITE_END]); */
 }
