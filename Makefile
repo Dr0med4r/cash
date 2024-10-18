@@ -1,10 +1,11 @@
 
-SRC = cash.cc
+SRC = cash.cc commandline.cc
 OBJ = ${SRC:.cc=.o}
+DEP = $(SRC:.cc=.d)
 BIN = cash
 
 
-CXXFLAGS= -Wall -Wextra -g
+CXXFLAGS= -MMD -Wall -Wextra -g
 
 ${BIN}: ${OBJ}
 	${CXX} ${OBJ} -o ${BIN}
@@ -13,4 +14,6 @@ run: ${BIN}
 	./${BIN}
 
 clean: 
-	rm ${OBJ}
+	rm -f ${OBJ} ${DEP}
+
+-include $(DEP)

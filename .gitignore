@@ -1,3 +1,4 @@
 cash
-cash.o
+*.o
+*.d
 .direnv/
