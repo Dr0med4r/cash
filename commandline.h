@@ -1,3 +1,7 @@
+#ifndef CASH_COMMANDLINE_H
+#define CASH_COMMANDLINE_H
+#include <exception>
+#include <stdexcept>
 #include <string>
 #include <unistd.h>
 #include <vector>
@@ -22,6 +26,18 @@ public:
   int exec(fd input, fd output);
 };
 
+class ExecError : public std::runtime_error {
+public:
+  ExecError(const std::string &msg) : std::runtime_error(msg) {};
+  ExecError(ExecError &&) = default;
+  ExecError(const ExecError &) = default;
+  ExecError &operator=(ExecError &&) = default;
+  ExecError &operator=(const ExecError &) = default;
+  ~ExecError() = default;
+
+private:
+};
+
 class Command {
   std::vector<Call> calls;
   fd input = STDIN_FILENO;
@@ -34,9 +50,10 @@ public:
   Command &operator=(Command &&) = default;
   Command() {}
   ~Command() = default;
-  bool set_input(fd input);
-  bool set_output(fd output); 
-  bool has_valid_output();
+  void set_input(fd input);
+  void set_output(fd output);
+  bool has_valid_fds();
   void add_call(Call call);
   void exec(bool wait = true);
 };
+#endif // !CASH_COMMANDLINE_H

@@ -2,6 +2,7 @@
 #include <array>
 #include <fcntl.h>
 #include <iostream>
+#include <stdexcept>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -40,43 +41,35 @@ int Call::exec(fd input, fd output) {
   return status;
 }
 
-bool Command::set_input(fd input) {
-  if (input == -1) {
-    return false;
+void Command::set_input(fd input) {
+  if (fcntl(input, F_GETFD) == -1) {
+    throw std::runtime_error{"not a valid fd"};
   }
   this->input = input;
-  return true;
 }
 
-bool Command::set_output(fd output) {
-  if (output == -1) {
-    return false;
+void Command::set_output(fd output) {
+  if (fcntl(input, F_GETFD) == -1) {
+    throw std::runtime_error{"not a valid fd"};
   }
   this->output = output;
-  return true;
 }
 
 void Command::add_call(Call call) { calls.push_back(call); }
-bool Command::has_valid_output() { return input != -1 && output != -1; }
+bool Command::has_valid_fds() { return input != -1 && output != -1; }
 
 // executes all given commands with pipes and the given input and output
 // redirection
 //
 // closes input and output fds if not stdfile
 void Command::exec(bool wait) {
-  if (!has_valid_output()) {
-    std::cout << "do not use without working filedescriptors!\n";
+  if (!has_valid_fds()) {
+    throw ExecError{"the output or input is not set"};
   }
   int pid = -1;
   switch (calls.size()) {
   case 0:
     return;
-  case 1: {
-    pid = fork();
-    if (pid == 0) {
-      calls.at(0).exec(input, output);
-    }
-  } break;
   default: {
     std::array<int, 2> fd1 = {input, 0};
     std::array<int, 2> fd2 = {0, output};
@@ -89,14 +82,15 @@ void Command::exec(bool wait) {
       int other_pipe = 1 - which_pipe;
       int error = pipe(fds[this_pipe].data());
       if (error == -1) {
-        // TODO Error Handling
-        return;
+        throw ExecError{"error creating pipe"};
       }
       if (i == calls.size() - 1) {
         fds[this_pipe][WRITE_END] = output;
-        /* std::cout << "output to: " << output << "\n"; */
       }
       pid = fork();
+      if (pid == -1) {
+        throw ExecError{"error forking"};
+      }
       if (pid == 0) {
         close_fd(fds[other_pipe][WRITE_END]);
         close_fd(fds[this_pipe][READ_END]);
