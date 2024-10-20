@@ -19,7 +19,7 @@ class Call {
     Call(Call &&) = default;
     Call &operator=(const Call &) = default;
     Call &operator=(Call &&) = default;
-    Call(std::string call, std::vector<std::string> args)
+    Call(std::string call, std::vector<std::string> args = std::vector<std::string>{})
         : command(std::move(call)), args(std::move(args)) {}
     ~Call() = default;
 

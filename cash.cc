@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "parse.h"
 #include "commandline.h"
 
 // currently available shell - cash
@@ -31,14 +32,15 @@ int open_output(std::string file) {
 }
 
 int main(void) {
-
-    Command test;
+    
+    int status = yyparse();
+    /* Command test; */
     /* int input = open_input("lol"); */
     /* test.set_input(input); */
-    int output = open_output("lwwl");
-    test.set_output(output);
-    test.add_call(Call("echo", std::vector<std::string>{"hi"}));
-    test.exec();
-    std::cout << "after execution\n";
+    /* int output = open_output("lwwl"); */
+    /* test.set_output(output); */
+    /* test.add_call(Call("echo", std::vector<std::string>{"hi"})); */
+    /* test.exec(); */
+    /* std::cout << "after execution\n"; */
     return 0;
 }

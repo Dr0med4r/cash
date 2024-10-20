@@ -10,6 +10,8 @@
       devShell = pkgs.mkShell {
         buildInputs = with pkgs; [
           gcc
+          flex
+          bison
         ];
       };
     }
