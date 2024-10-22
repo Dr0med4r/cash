@@ -41,6 +41,10 @@ int Call::exec(fd input, fd output) {
     return status;
 }
 
+void Call::add_arg(std::string arg) {
+    args.push_back(arg);
+}
+
 void Command::set_input(fd input) {
     if (fcntl(input, F_GETFD) == -1) {
         throw std::runtime_error{"not a valid fd"};
@@ -57,12 +61,15 @@ void Command::set_output(fd output) {
 
 void Command::add_call(Call call) { calls.push_back(call); }
 bool Command::has_valid_fds() { return input != -1 && output != -1; }
+void Command::set_background(bool _wait) {
+    wait = _wait;
+}
 
 // executes all given commands with pipes and the given input and output
 // redirection
 //
 // closes input and output fds if not stdfile
-void Command::exec(bool wait) {
+void Command::exec() {
     if (!has_valid_fds()) {
         throw ExecError{"the output or input is not set"};
     }

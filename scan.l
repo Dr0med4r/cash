@@ -1,7 +1,7 @@
 /* -*- indented-text -*- */
 %{
-#include "y.tab.h"
 #include <string.h>
+#include "parse.hh"
 
 #ifdef DOESNT_HAVE_STRDUP
 #warning DOESNT_HAVE_STRDUP

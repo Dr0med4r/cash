@@ -19,11 +19,13 @@ class Call {
     Call(Call &&) = default;
     Call &operator=(const Call &) = default;
     Call &operator=(Call &&) = default;
-    Call(std::string call, std::vector<std::string> args = std::vector<std::string>{})
+    Call(std::string call = "", std::vector<std::string> args = std::vector<std::string>{})
         : command(std::move(call)), args(std::move(args)) {}
     ~Call() = default;
 
     int exec(fd input, fd output);
+    void set_call(std::string call);
+    void add_arg(std::string arg);
 };
 
 class ExecError : public std::runtime_error {
@@ -42,6 +44,7 @@ class Command {
     std::vector<Call> calls;
     fd input = STDIN_FILENO;
     fd output = STDOUT_FILENO;
+    bool wait = true;
 
   public:
     Command(const Command &) = default;
@@ -54,6 +57,7 @@ class Command {
     void set_output(fd output);
     bool has_valid_fds();
     void add_call(Call call);
-    void exec(bool wait = true);
+    void exec();
+    void set_background(bool wait);
 };
 #endif // !CASH_COMMANDLINE_H
