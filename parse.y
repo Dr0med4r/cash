@@ -1,23 +1,26 @@
 /* -*- indented-text -*- */
+%code requires
+{
+#include "commandline.h"
+}
 
 %{
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
-#include "ShellState.h"
+//#include "ShellState.h"
 
 int yylex(void);
 extern "C" void yyerror(char *s);
 
 %}
 
-%union {
-       char *string;
-}
 
+%d -----------------------------------------------------------
 
 %start cmd_line
-%token <string> EXIT PIPE INPUT_REDIR OUTPUT_REDIR STRING NL BACKGROUND
+%nterm <
+%token <char*> EXIT PIPE INPUT_REDIR OUTPUT_REDIR STRING NL BACKGROUND
 
 
 %%
@@ -34,10 +37,10 @@ simple      : command redir
         ;
 
 command     : command STRING
-                { $$.add_arg($STRING)
+                { $<Call>$.add_arg($STRING)
                 }
         | STRING
-                { $$ = Call($STRING);
+                { $<Call>$ = Call($STRING);
                 }
         ;
 
@@ -60,11 +63,11 @@ input_redir:    INPUT_REDIR STRING
 				}
         ;
 
-pipeline    : pipeline PIPE simple
-                { $$ = $[left]; $$.add_call($simple)
+pipeline    : pipeline[left] PIPE simple
+                { $<Command>$ = $<Command>[left]; $<Command>$.add_call($<Call>simple)
                 }
         | simple
-                { $$ = Command(); $$.add_call($simple)
+                { $<Command>$ = Command(); $<Command>$.add_call($<Call>simple)
                 }
         ;
 %%
