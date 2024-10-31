@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "parse.hh"
+#include "scan.h"
 #include "commandline.h"
 
 // currently available shell - cash
@@ -32,16 +33,18 @@ int open_output(std::string file) {
 }
 
 int main(void) {
-    
-    auto test = yy::parser();
-    int status = test.parse();
-    /* Command test; */
+    auto scanner = Scan();
+    Command test;
+    param params = {scanner, test};
+    auto parser = yy::parser(params);
+    int status = parser.parse();
+    test.exec();
     /* int input = open_input("lol"); */
     /* test.set_input(input); */
     /* int output = open_output("lwwl"); */
     /* test.set_output(output); */
     /* test.add_call(Call("echo", std::vector<std::string>{"hi"})); */
     /* test.exec(); */
-    /* std::cout << "after execution\n"; */
+    std::cout << "after execution\n";
     return 0;
 }

@@ -1,21 +1,31 @@
 
-SRC = cash.cc commandline.cc parse.cc scan.cc
+SRC = parse.cc scan.cc cash.cc commandline.cc
 OBJ = ${SRC:.cc=.o} 
 DEP = $(SRC:.cc=.d)
 BIN = cash
 
 
-CXXFLAGS= -MMD -Wall -Wextra -g
+CXXFLAGS= -MMD -Wall -Wextra -g -O0
+
+all: ${BIN}
 
 
-${BIN}: ${OBJ} 
-	${CXX} ${OBJ} -o ${BIN}
+.SUFFIXES: .cc .c .o
 
-%.cc: %.l
+
+
+scan.cc: scan.l
 	flex -o $@ $<
 
- %.cc: %.y
-	bison -d -o $@ $<
+ %.cc %.hh: %.y
+	bison  $<
+
+%.c: %.y
+
+%.o: %.c
+	
+${BIN}: ${OBJ} 
+	${CXX} ${OBJ} -o ${BIN}
 
 
 
@@ -23,6 +33,6 @@ run: ${BIN}
 	./${BIN}
 
 clean: 
-	rm -f ${OBJ} ${DEP}
+	rm -f ${OBJ} ${DEP} parse.hh parse.cc scan.cc
 
 -include $(DEP)

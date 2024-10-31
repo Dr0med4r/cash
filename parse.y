@@ -3,34 +3,44 @@
 
 %define api.value.type variant
 %define api.token.constructor
+%parse-param {param params}
+%lex-param{str}
+%output "parse.cc"
 // %define api.header.include 
 
 /* -*- indented-text -*- */
 %code requires
 {
 #include "commandline.h"
+#include "scan.h"
+typedef struct param {
+        Scan& lexer;
+        Command& command;
+} param;
 }
 
-%{
+%code 
+{
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
 #include "commandline.h"
 //#include "ShellState.h"
 
-int yylex(void);
-extern "C" void yyerror(char *s);
+#define yylex params.lexer.yylex
+std::string *const str = new std::string{};
 
 Command commandline();
 
-%}
+}
 
 
 
 %start cmd_line
 %nterm <Call> command simple
 %nterm <Command> pipeline
-%token <std::string> EXIT PIPE INPUT_REDIR OUTPUT_REDIR STRING NL BACKGROUND
+%token  EXIT PIPE INPUT_REDIR OUTPUT_REDIR NL BACKGROUND
+%token <std::string> STRING
 
 
 %%
@@ -77,8 +87,12 @@ pipeline    : pipeline[left] PIPE simple
                 { $$ = $[left]; $$.add_call($simple);
                 }
         | simple
-                { $$ = Command(); $$.add_call($simple);
+                { $$ = params.command; $$.add_call($simple);
                 }
         ;
 %%
 
+void yy::parser::error(const std::string &message)
+{
+    std::cerr << "Error: " << message << std::endl;
+}
