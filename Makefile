@@ -5,7 +5,7 @@ DEP = $(SRC:.cc=.d)
 BIN = cash
 
 
-CXXFLAGS= -MMD -Wall -Wextra -g -O0
+CXXFLAGS= -MMD -Wall -Wextra -g
 
 all: ${BIN}
 
@@ -14,11 +14,12 @@ all: ${BIN}
 
 
 
+parse.cc parse.hh: parse.y
+	bison -d $<
+
 scan.cc: scan.l
 	flex -o $@ $<
 
- %.cc %.hh: %.y
-	bison  $<
 
 %.c: %.y
 

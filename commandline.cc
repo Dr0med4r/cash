@@ -2,6 +2,7 @@
 #include <array>
 #include <fcntl.h>
 #include <iostream>
+#include <ostream>
 #include <stdexcept>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -45,6 +46,16 @@ void Call::add_arg(std::string arg) {
     args.push_back(arg);
 }
 
+std::ostream& operator<<(std::ostream& os, const Call& obj) {
+
+    os << "Call("<< obj.command <<", [ ";
+    for(auto elem: obj.args) {
+        os << elem <<" ";
+    }
+    os << "])";
+    return os;
+}
+
 void Command::set_input(fd input) {
     if (fcntl(input, F_GETFD) == -1) {
         throw std::runtime_error{"not a valid fd"};
@@ -63,6 +74,16 @@ void Command::add_call(Call call) { calls.push_back(call); }
 bool Command::has_valid_fds() { return input != -1 && output != -1; }
 void Command::set_background(bool _wait) {
     wait = _wait;
+}
+std::ostream& operator<<(std::ostream& os, const Command& obj) {
+    os << "Command( "; 
+    os << "input: " << obj.input << "\n";
+    os << "output: " << obj.output;
+    for (auto elem: obj.calls) {
+        os << elem << "\n";
+    }
+    os<<")";
+    return os;
 }
 
 // executes all given commands with pipes and the given input and output

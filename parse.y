@@ -3,8 +3,8 @@
 
 %define api.value.type variant
 %define api.token.constructor
-%parse-param {param params}
-%lex-param{str}
+%parse-param {Command& command}
+//%lex-param{str}
 %output "parse.cc"
 // %define api.header.include 
 
@@ -12,11 +12,6 @@
 %code requires
 {
 #include "commandline.h"
-#include "scan.h"
-typedef struct param {
-        Scan& lexer;
-        Command& command;
-} param;
 }
 
 %code 
@@ -24,14 +19,8 @@ typedef struct param {
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
-#include "commandline.h"
+yy::parser::symbol_type yylex();
 //#include "ShellState.h"
-
-#define yylex params.lexer.yylex
-std::string *const str = new std::string{};
-
-Command commandline();
-
 }
 
 
@@ -39,8 +28,9 @@ Command commandline();
 %start cmd_line
 %nterm <Call> command simple
 %nterm <Command> pipeline
-%token  EXIT PIPE INPUT_REDIR OUTPUT_REDIR NL BACKGROUND
+%token  EXIT PIPE INPUT_REDIR OUTPUT_REDIR BACKGROUND
 %token <std::string> STRING
+%token NL 0
 
 
 %%
@@ -57,10 +47,10 @@ simple      : command redir
         ;
 
 command     : command STRING
-                { $$.add_arg($STRING);
+                { $$.add_arg($STRING); std::cout <<"command, string: " << $STRING << "\n";
                 }
         | STRING
-                { $$ = Call($STRING);
+                { $$ = Call($STRING);std::cout << "string: " << $STRING << "\n";
                 }
         ;
 
@@ -84,10 +74,10 @@ input_redir:    INPUT_REDIR STRING
         ;
 
 pipeline    : pipeline[left] PIPE simple
-                { $$ = $[left]; $$.add_call($simple);
+                { $$ = $[left]; $$.add_call($simple); std::cout << "pipe, simple: " << $simple << "\n";
                 }
         | simple
-                { $$ = params.command; $$.add_call($simple);
+                { $$ = command; $$.add_call($simple); std::cout << "simple: " << $simple << "\n";
                 }
         ;
 %%

@@ -1,6 +1,7 @@
 #ifndef CASH_COMMANDLINE_H
 #define CASH_COMMANDLINE_H
 #include <exception>
+#include <ostream>
 #include <stdexcept>
 #include <string>
 #include <unistd.h>
@@ -23,6 +24,7 @@ class Call {
         : command(std::move(call)), args(std::move(args)) {}
     ~Call() = default;
 
+    friend std::ostream& operator<<(std::ostream& os, const Call& obj);
     int exec(fd input, fd output);
     void set_call(std::string call);
     void add_arg(std::string arg);
@@ -53,6 +55,8 @@ class Command {
     Command &operator=(Command &&) = default;
     Command() {}
     ~Command() = default;
+
+    friend std::ostream& operator<<(std::ostream& os, const Command& obj);
     void set_input(fd input);
     void set_output(fd output);
     bool has_valid_fds();

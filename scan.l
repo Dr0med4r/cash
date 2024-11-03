@@ -1,22 +1,22 @@
 /* -*- indented-text -*- */
 %{
-#include <string.h>
+
 #include "parse.hh"
-#include "scan.h"
+#include <string.h>
+#undef YY_DECL
+#define YY_DECL yy::parser::symbol_type yylex()
+YY_DECL;
 
 #ifdef DOESNT_HAVE_STRDUP
 #warning DOESNT_HAVE_STRDUP
 char *strdup(const char *s);
 #endif
-#undef YY_DECL
-#define YY_DECL int Scan::yylex(std::string *const yylval)
 
 #define ECHO
 %}
 
-%option noyywrap
-%option c++
-%option yyclass="Scan"
+%option noyywrap noinput nounput
+%option outfile="scan.cc"
 
 NL              [\n]
 PIPE            [|]
@@ -27,12 +27,12 @@ CHAR            [0-9a-zA-Z_/\-\*\.]
 SPACE           [\032]
 %% 
 
-exit            { ECHO; return yy::parser::token::EXIT; }
-{NL}            { ECHO; return 0; }
-{BG}            { ECHO; return yy::parser::token::BACKGROUND; }
-{PIPE}          { ECHO; return yy::parser::token::PIPE;}
-{OUTPUT_REDIR}  { ECHO; return yy::parser::token::OUTPUT_REDIR; }
-{INPUT_REDIR}   { ECHO; return yy::parser::token::INPUT_REDIR; }
-{CHAR}+         { ECHO; *yylval = std::string(strdup(yytext)); return yy::parser::token::STRING; }
+exit            { ECHO; return yy::parser::make_EXIT(); }
+{NL}            { ECHO; return yy::parser::make_NL(); }
+{BG}            { ECHO; return yy::parser::make_BACKGROUND(); }
+{PIPE}          { ECHO; return yy::parser::make_PIPE();}
+{OUTPUT_REDIR}  { ECHO; return yy::parser::make_OUTPUT_REDIR(); }
+{INPUT_REDIR}   { ECHO; return yy::parser::make_INPUT_REDIR(); }
+{CHAR}+         { ECHO; return yy::parser::make_STRING(yytext); }
 .               ;
 %%
