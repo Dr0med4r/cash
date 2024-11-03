@@ -2,3 +2,6 @@ cash
 *.o
 *.d
 .direnv/
+parse.cc
+parse.hh
+scan.cc
