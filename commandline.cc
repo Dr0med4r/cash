@@ -50,7 +50,7 @@ std::ostream& operator<<(std::ostream& os, const Call& obj) {
 
     os << "Call("<< obj.command <<", [ ";
     for(auto elem: obj.args) {
-        os << elem <<" ";
+        os << elem <<", ";
     }
     os << "])";
     return os;
@@ -77,10 +77,10 @@ void Command::set_background(bool _wait) {
 }
 std::ostream& operator<<(std::ostream& os, const Command& obj) {
     os << "Command( "; 
-    os << "input: " << obj.input << "\n";
-    os << "output: " << obj.output;
+    os << "input: " << obj.input << ", ";
+    os << "output: " << obj.output << ", ";
     for (auto elem: obj.calls) {
-        os << elem << "\n";
+        os << elem << ", ";
     }
     os<<")";
     return os;
