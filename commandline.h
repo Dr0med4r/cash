@@ -1,6 +1,7 @@
-#ifndef CASH_COMMANDLINE_H
-#define CASH_COMMANDLINE_H
+#pragma once
+#include "errors.h"
 #include <exception>
+#include <memory>
 #include <ostream>
 #include <stdexcept>
 #include <string>
@@ -11,7 +12,19 @@ typedef int fd;
 #define READ_END 0
 #define NO_OPTION 0
 
+// close fd if not stdin or stdout
+//
+// returns -1 on close error
+// 0 on success and 1 on stdfile
+inline int close_fd(int fd) {
+    if (fd != STDIN_FILENO && fd != STDOUT_FILENO) {
+        return close(fd);
+    }
+    return 1;
+}
+
 class Call {
+protected: 
     std::string command;
     std::vector<std::string> args;
 
@@ -22,28 +35,17 @@ class Call {
     Call &operator=(Call &&) = default;
     Call(std::string call = "", std::vector<std::string> args = std::vector<std::string>{})
         : command(std::move(call)), args(std::move(args)) {}
-    ~Call() = default;
+    virtual ~Call(){};
 
     friend std::ostream& operator<<(std::ostream& os, const Call& obj);
-    int exec(fd input, fd output);
+    virtual void exec(fd input, fd output);
     void set_call(std::string call);
     void add_arg(std::string arg);
 };
 
-class ExecError : public std::runtime_error {
-  public:
-    ExecError(const std::string &msg) : std::runtime_error(msg) {};
-    ExecError(ExecError &&) = default;
-    ExecError(const ExecError &) = default;
-    ExecError &operator=(ExecError &&) = default;
-    ExecError &operator=(const ExecError &) = default;
-    ~ExecError() = default;
-
-  private:
-};
 
 class Command {
-    std::vector<Call> calls;
+    std::vector<std::unique_ptr<Call>> calls;
     fd input = STDIN_FILENO;
     fd output = STDOUT_FILENO;
     bool wait = true;
@@ -60,8 +62,7 @@ class Command {
     void set_input(fd input);
     void set_output(fd output);
     bool has_valid_fds();
-    void add_call(Call call);
+    void add_call(std::unique_ptr<Call> call);
     void exec();
     void set_background(bool wait);
 };
-#endif // !CASH_COMMANDLINE_H

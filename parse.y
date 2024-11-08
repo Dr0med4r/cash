@@ -16,12 +16,16 @@
 
 %code 
 {
-#include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
 #include <fcntl.h>
 #include <cerrno>
 #include <cstring>
+#include <string>  
+#include <iostream> 
+#include <sstream> 
+#include "errors.h"
+#include "shellcall.h"
 yy::parser::symbol_type yylex();
 int open_input(std::string file);
 int open_output(std::string file);
@@ -31,7 +35,7 @@ int open_output(std::string file);
 
 
 %start cmd_line
-%nterm <Call> command simple
+%nterm <Call*> command simple
 %nterm <Command*> pipeline
 %token  EXIT PIPE INPUT_REDIR OUTPUT_REDIR BACKGROUND
 %token <std::string> STRING
@@ -55,11 +59,25 @@ simple      : command redir
 
 command     : command[left] STRING
                 { 
-                    $$ = std::move($left); $$.add_arg($STRING);
+                    $$ = std::move($left); $$->add_arg($STRING);
                 }
         | STRING
                 { 
-                    $$ = Call($STRING);
+                    if ($STRING == "cd") {
+                        std::cout << "cd\n";
+                        $$ = new ShellCallCd($STRING);
+                    }
+                    else if ($STRING == "pwd") {
+                        std::cout << "pwd\n";
+                        $$ = new ShellCallPwd($STRING);
+                        
+                    }
+                    else if ($STRING == "alias" || $STRING == "unalias") {
+                        
+                    }
+                    else {
+                        $$ = new Call($STRING);
+                    }
                 }
         ;
 
@@ -88,11 +106,11 @@ input_redir:    INPUT_REDIR STRING
 
 pipeline    : pipeline[left] PIPE simple
                 { 
-                    $$ = std::move($[left]); $$->add_call($simple);
+                    $$ = std::move($[left]); $$->add_call(std::unique_ptr<Call>($simple));
                 }
         | simple
                 { 
-                    $$ = std::move(command); $$->add_call($simple);
+                    $$ = std::move(command); $$->add_call(std::unique_ptr<Call>($simple));
                 }
         ;
 %%
@@ -105,8 +123,10 @@ void yy::parser::error(const std::string &message)
 int open_input(std::string file) {
     int input = open(file.c_str(), O_RDONLY);
     if (input == -1) {
-        std::cerr << "open " << file << " failed: " << std::strerror(errno)
+        std::stringstream msg;
+        msg << "open " << file << " failed: " << std::strerror(errno)
                   << "\n";
+        throw FileError{msg.str()};
     }
     return input;
 }
@@ -115,8 +135,10 @@ int open_output(std::string file) {
     int output = open(file.c_str(), O_WRONLY | O_CREAT | O_TRUNC,
                       S_IRUSR | S_IWUSR | S_IROTH | S_IRGRP);
     if (output == -1) {
-        std::cerr << "open " << file << " failed: " << std::strerror(errno)
+        std::stringstream msg;
+        msg << "open " << file << " failed: " << std::strerror(errno)
                   << "\n";
+        throw FileError{msg.str()};
     }
     return output;
 }
