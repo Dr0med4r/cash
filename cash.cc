@@ -3,16 +3,13 @@
 #include <cstring>
 #include <fcntl.h>
 #include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
 
 #include "commandline.h"
+#include "errors.h"
 #include "parse.hh"
 
 // currently available shell - cash
 //
-
 
 int main(void) {
     /* int input = open_input("lol"); */
@@ -25,9 +22,20 @@ int main(void) {
         std::cout << "$ ";
         Command test;
         auto parser = yy::parser(&test);
-        int status = parser.parse();
-        test.exec();
-        std::cout << "after execution\n";
+        int status = 1;
+        try {
+            status = parser.parse();
+        } catch (FileError &e) {
+            std::cerr << e.what();
+        }
+        if (status == 0) {
+            std::cout << test << "\n";
+            try {
+            test.exec();
+            } catch (ExecError &e) {
+                std::cerr << e.what();
+            }
+        }
     }
     return 0;
 }
