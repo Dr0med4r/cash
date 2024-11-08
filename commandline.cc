@@ -120,7 +120,8 @@ void Command::exec() {
             if (i == calls.size() - 1) {
                 fds[this_pipe][WRITE_END] = output;
             }
-            if (typeid(call) == typeid(Call)) {
+            auto &val = *call;
+            if (typeid(val) == typeid(Call)) {
                 pid = fork();
             } else {
                 pid = 0;

@@ -27,12 +27,13 @@ CHAR            [0-9a-zA-Z_/\-\*\.]
 SPACE           [\032]
 %% 
 
-exit            { ECHO; return yy::parser::make_EXIT(); }
-{NL}            { ECHO; return yy::parser::make_NL(); }
-{BG}            { ECHO; return yy::parser::make_BACKGROUND(); }
-{PIPE}          { ECHO; return yy::parser::make_PIPE();}
-{OUTPUT_REDIR}  { ECHO; return yy::parser::make_OUTPUT_REDIR(); }
-{INPUT_REDIR}   { ECHO; return yy::parser::make_INPUT_REDIR(); }
-{CHAR}+         { ECHO; return yy::parser::make_STRING(yytext); }
+exit            { return yy::parser::make_EXIT(); }
+{NL}            { return yy::parser::make_NL(); }
+{BG}            { return yy::parser::make_BACKGROUND(); }
+{PIPE}          { return yy::parser::make_PIPE();}
+{OUTPUT_REDIR}  { return yy::parser::make_OUTPUT_REDIR(); }
+{INPUT_REDIR}   { return yy::parser::make_INPUT_REDIR(); }
+{CHAR}+         { return yy::parser::make_STRING(yytext); }
+<<EOF>>         { return yy::parser::make_EXIT(); }
 .               ;
 %%

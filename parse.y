@@ -44,7 +44,9 @@ int open_output(std::string file);
 
 %%
 cmd_line    :
-        | EXIT             { }
+        | EXIT { 
+        exit(0);
+        }
         | pipeline back_ground
         ;
 
@@ -64,13 +66,10 @@ command     : command[left] STRING
         | STRING
                 { 
                     if ($STRING == "cd") {
-                        std::cout << "cd\n";
                         $$ = new ShellCallCd($STRING);
                     }
                     else if ($STRING == "pwd") {
-                        std::cout << "pwd\n";
                         $$ = new ShellCallPwd($STRING);
-                        
                     }
                     else if ($STRING == "alias" || $STRING == "unalias") {
                         
