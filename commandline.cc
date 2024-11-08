@@ -34,7 +34,14 @@ void Call::exec(fd input, fd output) {
     close_fd(output);
     execvp(command.c_str(), c_args);
     std::stringstream msg;
-    msg << "executing " << *this << " failed: " << std::strerror(errno) << "\n";
+    msg << "executing " << *this << " failed";
+    if (errno == ENOENT) {
+        msg << ": command not found";
+    }
+    if (errno == EACCES) {
+        msg << ": access denied";
+    }
+    msg << "\n";
 
     free(c_args);
     throw ExecError{msg.str()};
@@ -124,8 +131,14 @@ void Command::exec() {
             if (pid == 0) {
                 close_fd(fds[other_pipe][WRITE_END]);
                 close_fd(fds[this_pipe][READ_END]);
-                call->exec(fds[other_pipe][READ_END],
-                           fds[this_pipe][WRITE_END]);
+                try {
+                    call->exec(fds[other_pipe][READ_END],
+                               fds[this_pipe][WRITE_END]);
+
+                } catch (ExecError &e) {
+                    std::cerr << e.what();
+                    exit(1);
+                }
             }
             for (int fd : fds[other_pipe]) {
                 close_fd(fd);

@@ -30,11 +30,7 @@ int main(void) {
         }
         if (status == 0) {
             std::cout << test << "\n";
-            try {
             test.exec();
-            } catch (ExecError &e) {
-                std::cerr << e.what();
-            }
         }
     }
     return 0;
