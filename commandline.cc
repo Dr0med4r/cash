@@ -42,15 +42,13 @@ int Call::exec(fd input, fd output) {
     return status;
 }
 
-void Call::add_arg(std::string arg) {
-    args.push_back(arg);
-}
+void Call::add_arg(std::string arg) { args.push_back(arg); }
 
-std::ostream& operator<<(std::ostream& os, const Call& obj) {
+std::ostream &operator<<(std::ostream &os, const Call &obj) {
 
-    os << "Call("<< obj.command <<", [ ";
-    for(auto elem: obj.args) {
-        os << elem <<", ";
+    os << "Call(" << obj.command << ", [ ";
+    for (auto elem : obj.args) {
+        os << elem << ", ";
     }
     os << "])";
     return os;
@@ -72,17 +70,16 @@ void Command::set_output(fd output) {
 
 void Command::add_call(Call call) { calls.push_back(call); }
 bool Command::has_valid_fds() { return input != -1 && output != -1; }
-void Command::set_background(bool _wait) {
-    wait = _wait;
-}
-std::ostream& operator<<(std::ostream& os, const Command& obj) {
-    os << "Command( "; 
+void Command::set_background(bool _wait) { wait = _wait; }
+std::ostream &operator<<(std::ostream &os, const Command &obj) {
+    os << "Command( ";
     os << "input: " << obj.input << ", ";
     os << "output: " << obj.output << ", ";
-    for (auto elem: obj.calls) {
+    os << "background: " << obj.wait << ", ";
+    for (auto elem : obj.calls) {
         os << elem << ", ";
     }
-    os<<")";
+    os << ")";
     return os;
 }
 
@@ -128,6 +125,9 @@ void Command::exec() {
             for (int fd : fds[other_pipe]) {
                 close_fd(fd);
             }
+            if (wait && pid > 0) {
+                waitpid(pid, nullptr, NO_OPTION);
+            }
         }
         for (auto arr : fds) {
             for (int fd : arr) {
@@ -140,7 +140,4 @@ void Command::exec() {
     // as the input and output are closed now do not use them again
     input = -1;
     output = -1;
-    if (wait && pid > 0) {
-        waitpid(pid, nullptr, NO_OPTION);
-    }
 }
