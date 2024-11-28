@@ -4,7 +4,6 @@
 %define api.value.type variant
 %define api.token.constructor
 %parse-param {Command* command}
-//%lex-param{str}
 %output "parse.cc"
 // %define api.header.include 
 

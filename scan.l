@@ -13,6 +13,18 @@ char *strdup(const char *s);
 #endif
 
 #define ECHO
+
+std::string yyinput = "";
+
+#define YY_INPUT(buf,result,max_size) \
+    {\
+        if (yyinput.length() == 0) {\
+            result = YY_NULL;\
+        }\
+        buf[0] = yyinput.at(0);\
+        yyinput.erase(0,1);\
+        result = 1;\
+    }
 %}
 
 %option noyywrap noinput nounput

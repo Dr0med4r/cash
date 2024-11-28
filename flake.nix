@@ -12,6 +12,7 @@
           gcc
           flex
           bison
+          readline
         ];
       };
     }

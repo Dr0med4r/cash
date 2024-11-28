@@ -6,6 +6,7 @@ BIN = cash
 
 
 CXXFLAGS= -MMD -Wall -Wextra -g
+COMPILEFLAGS = -lreadline
 
 all: ${BIN}
 
@@ -26,7 +27,7 @@ scan.cc: scan.l
 %.o: %.c
 	
 ${BIN}: ${OBJ} 
-	${CXX} ${OBJ} -o ${BIN}
+	${CXX} ${COMPILEFLAGS} ${OBJ} -o ${BIN}
 
 
 
