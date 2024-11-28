@@ -71,7 +71,7 @@ command     : command[left] STRING
                         $$ = new ShellCallPwd($STRING);
                     }
                     else if ($STRING == "alias" || $STRING == "unalias") {
-                        
+                        $$ = new ShellCallAlias($STRING);
                     }
                     else {
                         $$ = new Call($STRING);

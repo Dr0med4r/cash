@@ -5,7 +5,7 @@ DEP = $(SRC:.cc=.d)
 BIN = cash
 
 
-CXXFLAGS= -MMD -Wall -Wextra -g
+CXXFLAGS= -std=c++20 -MMD -Wall -Wextra -g
 COMPILEFLAGS = -lreadline
 
 all: ${BIN}
