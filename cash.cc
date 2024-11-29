@@ -35,7 +35,6 @@ int main(void) {
         if (result != "") {
             add_history(result.data());
         }
-        ShellCallAlias::resolve_alias(result);
         // the result of readline does not contain a newline at the end but the
         // parser expects one but add it after adding the result to the history
         result.push_back('\n');

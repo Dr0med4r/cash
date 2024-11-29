@@ -23,7 +23,9 @@ class ShellCallAlias : public Call {
     virtual ~ShellCallAlias() {};
     virtual void exec (int, int) override;
     static void resolve_alias(std::string& to_expand);
+    static bool contains_alias(std::string& key);
+    static std::vector<std::string> get_alias(std::string& key);
   private:
-    static std::unordered_map<std::string, std::string> aliases;
+    static std::unordered_map<std::string, std::vector<std::string>> aliases;
 };
 

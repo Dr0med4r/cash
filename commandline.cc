@@ -1,5 +1,6 @@
 #include "commandline.h"
 #include "errors.h"
+#include "shellcall.h"
 #include <array>
 #include <cerrno>
 #include <cstring>
@@ -13,12 +14,29 @@
 #include <typeinfo>
 #include <unistd.h>
 
+void Call::resolve_alias() {
+    if (!ShellCallAlias::contains_alias(command)) {
+        return;
+    }
+    std::vector<std::string> replacement = ShellCallAlias::get_alias(command);
+    if (replacement.size() == 0) {
+        return;
+    }
+    this->command = replacement.front();
+    if (replacement.size() < 2) {
+        return;
+    }
+    this->args.insert(this->args.begin(), ++replacement.begin(),
+                      replacement.end());
+}
+
 // executes the command in the path with the current environment
 //
 // returns the pid of the child
 //
 // closes the given filedescriptors if they are not stdin or stdout
 void Call::exec(fd input, fd output) {
+    resolve_alias();
     char **c_args;
     c_args = (char **)malloc(sizeof(char *) * (args.size() + 2));
     c_args[0] = command.data();

@@ -41,6 +41,8 @@ protected:
     virtual void exec(fd input, fd output);
     void set_call(std::string call);
     void add_arg(std::string arg);
+private: 
+    void resolve_alias();
 };
 
 
