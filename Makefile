@@ -3,9 +3,10 @@ SRC = parse.cc scan.cc cash.cc commandline.cc shellcall.cc
 OBJ = ${SRC:.cc=.o} 
 DEP = $(SRC:.cc=.d)
 BIN = cash
+VPATH = src
 
 
-CXXFLAGS= -std=c++20 -MMD -Wall -Wextra -g
+CXXFLAGS= -std=c++20 -MMD -Wall -Wextra -g -Isrc
 COMPILEFLAGS = -lreadline
 
 all: ${BIN}

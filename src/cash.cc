@@ -8,7 +8,7 @@
 
 #include "commandline.h"
 #include "errors.h"
-#include "parse.hh"
+#include "../parse.hh"
 #include "shellcall.h"
 
 // currently available shell - cash
