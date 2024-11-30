@@ -1,13 +1,13 @@
 #include "call.h"
-#include "shellcall.h"
+#include "builtins.h"
 
 #include <sstream>
 
 void Call::resolve_alias() {
-    if (!ShellCallAlias::contains_alias(command)) {
+    if (!ShellBuiltinAlias::contains_alias(command)) {
         return;
     }
-    std::vector<std::string> replacement = ShellCallAlias::get_alias(command);
+    std::vector<std::string> replacement = ShellBuiltinAlias::get_alias(command);
     if (replacement.size() == 0) {
         return;
     }
@@ -41,12 +41,12 @@ void Call::exec(fd input, fd output) {
     close_fd(output);
     execvp(command.c_str(), c_args);
     std::stringstream msg;
-    msg << "executing " << *this << " failed";
+    msg << "executing " << *this << " failed: ";
     if (errno == ENOENT) {
-        msg << ": command not found";
+        msg << "command not found";
     }
     if (errno == EACCES) {
-        msg << ": access denied";
+        msg << "access denied";
     }
     msg << "\n";
 
@@ -57,11 +57,9 @@ void Call::exec(fd input, fd output) {
 void Call::add_arg(std::string arg) { args.push_back(arg); }
 
 std::ostream &operator<<(std::ostream &os, const Call &obj) {
-
-    os << "Call(" << obj.command << ", [ ";
+    os << obj.command;
     for (auto elem : obj.args) {
-        os << elem << ", ";
+        os << " " << elem;
     }
-    os << "])";
     return os;
 }

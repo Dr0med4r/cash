@@ -24,7 +24,7 @@
 #include <iostream> 
 #include <sstream> 
 #include "errors.h"
-#include "shellcall.h"
+#include "builtins.h"
 yy::parser::symbol_type yylex();
 int open_input(std::string file);
 int open_output(std::string file);
@@ -65,13 +65,16 @@ command     : command[left] STRING
         | STRING
                 { 
                     if ($STRING == "cd") {
-                        $$ = new ShellCallCd($STRING);
+                        $$ = new ShellBuiltinCd($STRING);
                     }
                     else if ($STRING == "pwd") {
-                        $$ = new ShellCallPwd($STRING);
+                        $$ = new ShellBuiltinPwd($STRING);
                     }
                     else if ($STRING == "alias" || $STRING == "unalias") {
-                        $$ = new ShellCallAlias($STRING);
+                        $$ = new ShellBuiltinAlias($STRING);
+                    }
+                    else if ($STRING == "kill") {
+                        $$ = new ShellBuiltinKill($STRING);
                     }
                     else {
                         $$ = new Call($STRING);

@@ -1,6 +1,6 @@
 #include "commandline.h"
 #include "errors.h"
-#include "shellcall.h"
+#include "builtins.h"
 #include <array>
 #include <fcntl.h>
 #include <iostream>
@@ -25,13 +25,14 @@ void Command::add_call(std::unique_ptr<Call> call) {
 }
 bool Command::has_valid_fds() { return input != -1 && output != -1; }
 void Command::set_background(bool background) { wait = !background; }
+
 std::ostream &operator<<(std::ostream &os, const Command &obj) {
     os << "Command( ";
     os << "input: " << obj.input << ", ";
     os << "output: " << obj.output << ", ";
     os << "background: " << !obj.wait << ", ";
     for (auto &elem : obj.calls) {
-        os << *elem << ", ";
+        os << *elem << "| ";
     }
     os << ")";
     return os;
