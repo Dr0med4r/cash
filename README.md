@@ -1,6 +1,5 @@
 # TODO
 - kill
-- alias/unalias
-    - implement this in the call exec as it can be substituted for every call
-    - change the alias value to vector of strings
+- signal action
+    - ignore interrupt (to send ^C to jobs and not stop the shell)
 - maybe wait for zombie processes
