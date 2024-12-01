@@ -1,4 +1,5 @@
 #include <cerrno>
+#include <csignal>
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
@@ -6,10 +7,10 @@
 #include <readline/history.h>
 #include <readline/readline.h>
 
-#include "commandline.h"
-#include "errors.h"
 #include "../parse.hh"
 #include "builtins.h"
+#include "commandline.h"
+#include "errors.h"
 
 // currently available shell - cash
 //
@@ -17,6 +18,12 @@
 extern std::string yyinput;
 
 int main(void) {
+    struct sigaction act = {};
+    act.sa_handler = SIG_IGN;
+    if (sigaction(SIGINT, &act, NULL) == -1) {
+        std::cerr << "set sigaction failed\n";
+        exit(1);
+    }
     using_history();
     const int history_length = 10000;
     stifle_history(history_length);

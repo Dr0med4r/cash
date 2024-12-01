@@ -10,7 +10,7 @@
 /* -*- indented-text -*- */
 %code requires
 {
-#include "commandline.h"
+#include "src/commandline.h"
 }
 
 %code 
