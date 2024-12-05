@@ -1,5 +1,6 @@
 #include "call.h"
 #include "builtins.h"
+#include "cash.h"
 
 #include <csignal>
 #include <iostream>
@@ -28,13 +29,7 @@ void Call::resolve_alias() {
 //
 // closes the given filedescriptors if they are not stdin or stdout
 void Call::exec(fd input, fd output) {
-    // reset signal handlers for command
-    struct sigaction act = {};
-    act.sa_handler = SIG_DFL;
-    if (sigaction(SIGINT, &act, NULL) == -1) {
-        std::cerr << "set sigaction failed\n";
-        exit(1);
-    }
+    Cash::reset_signals();
     resolve_alias();
     char **c_args;
     c_args = (char **)malloc(sizeof(char *) * (args.size() + 2));

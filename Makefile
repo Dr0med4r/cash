@@ -1,5 +1,5 @@
 
-SRC = parse.cc scan.cc cash.cc commandline.cc builtins.cc call.cc
+SRC = parse.cc scan.cc cash.cc commandline.cc builtins.cc call.cc main.cc
 OBJ = ${SRC:.cc=.o} 
 DEP = $(SRC:.cc=.d)
 BIN = cash

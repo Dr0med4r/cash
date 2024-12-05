@@ -4,60 +4,62 @@
 #include <cstring>
 #include <fcntl.h>
 #include <iostream>
+#include <list>
 #include <readline/history.h>
 #include <readline/readline.h>
+#include <sys/wait.h>
+#include <unordered_map>
+#include <vector>
 
-#include "../parse.hh"
 #include "builtins.h"
-#include "commandline.h"
-#include "errors.h"
+#include "cash.h"
 
-// currently available shell - cash
-//
+std::unordered_map<int, std::list<int>> Cash::jobs =
+    std::unordered_map<int, std::list<int>>{};
 
-extern std::string yyinput;
-
-int main(void) {
+void Cash::setup_signals() {
     struct sigaction act = {};
     act.sa_handler = SIG_IGN;
     if (sigaction(SIGINT, &act, NULL) == -1) {
         std::cerr << "set sigaction failed\n";
         exit(1);
     }
-    using_history();
-    const int history_length = 10000;
-    stifle_history(history_length);
-    while (true) {
-        char* input_char = readline("$ ");
-        if (!input_char) {
-            exit(0);
-        }
-        std::string input = input_char;
-        char* output_string;
-        int success = history_expand(input.data(), &output_string);
-        if (success == -1) {
-            std::cerr << "there was an error while expanding history\n";
-        }
-        std::string result = output_string;
-        if (result != "") {
-            add_history(result.data());
-        }
-        // the result of readline does not contain a newline at the end but the
-        // parser expects one but add it after adding the result to the history
-        result.push_back('\n');
-        yyinput = result;
-        Command test;
-        auto parser = yy::parser(&test);
-        int status = 1;
-        try {
-            status = parser.parse();
-        } catch (FileError& e) {
-            std::cerr << e.what();
-        }
-        if (status == 0) {
-            std::cout << test << "\n";
-            test.exec();
+    if (sigaction(SIGTERM, &act, NULL) == -1) {
+        std::cerr << "set sigaction failed\n";
+        exit(1);
+    }
+}
+void Cash::reset_signals() {
+    struct sigaction act = {};
+    act.sa_handler = SIG_DFL;
+    if (sigaction(SIGINT, &act, NULL) == -1) {
+        std::cerr << "set sigaction failed\n";
+        exit(1);
+    }
+    if (sigaction(SIGTERM, &act, NULL) == -1) {
+        std::cerr << "set sigaction failed\n";
+        exit(1);
+    }
+}
+
+// TODO iterator invalidation
+void Cash::wait_for_bg() {
+    std::vector<int> finished_jobs;
+    for (auto& [key, job] : jobs) {
+        std::vector<std::vector<int>::iterator> to_delete_pids;
+        for (int const pid: job) {
+            int result = waitpid(pid, nullptr, WNOHANG);
+            if (result == key) {
+                finished_jobs.push_back(key);
+            }
         }
     }
-    return 0;
+    for (int job: finished_jobs) {
+        // TODO sind alle prozesse fertig, wenn der letzte fertig ist?
+        jobs.erase(job);
+    }
+}
+
+void Cash::add_job(std::list<int> job) {
+    jobs.insert_or_assign(job.back(), job);
 }

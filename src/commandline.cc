@@ -1,9 +1,12 @@
 #include "commandline.h"
-#include "errors.h"
 #include "builtins.h"
+#include "cash.h"
+#include "errors.h"
+
 #include <array>
 #include <fcntl.h>
 #include <iostream>
+#include <list>
 #include <sys/wait.h>
 
 void Command::set_input(fd input) {
@@ -54,6 +57,7 @@ void Command::exec() {
         std::array<int, 2> fd1 = {input, 0};
         std::array<int, 2> fd2 = {0, output};
         std::array<std::array<int, 2>, 2> fds = {fd1, fd2};
+        std::list<int> job;
         int which_pipe = 0;
         size_t i = 0;
         // alternate between the two pipes as input and output
@@ -94,8 +98,13 @@ void Command::exec() {
             }
             if (wait && pid > 0) {
                 waitpid(pid, nullptr, NO_OPTION);
+            } else if (!wait && pid > 0) {
+                job.push_back(pid);
             }
             i++;
+        }
+        if (!wait) {
+            Cash::add_job(std::move(job));
         }
         for (auto arr : fds) {
             for (int fd : arr) {
