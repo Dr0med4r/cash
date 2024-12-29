@@ -20,7 +20,6 @@ int main(void) {
     stifle_history(history_length);
     const std::string prompt = "$ ";
     while (true) {
-        Cash::wait_for_bg();
         char* input_char = readline(prompt.data());
         if (!input_char) {
             exit(0);
@@ -39,8 +38,8 @@ int main(void) {
         // parser expects one but add it after adding the result to the history
         result.push_back('\n');
         yyinput = result;
-        Command test;
-        auto parser = yy::parser(&test);
+        Command command;
+        auto parser = yy::parser(&command);
         int status = 1;
         try {
             status = parser.parse();
@@ -48,9 +47,9 @@ int main(void) {
             std::cerr << e.what();
         }
         if (status == 0) {
-            std::cout << test << "\n";
-            test.exec();
+            command.exec();
         }
+        Cash::wait_for_bg();
     }
     return 0;
 }

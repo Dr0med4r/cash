@@ -1,6 +1,7 @@
 #include <list>
+#include <mutex>
 #include <string>
-#include <unordered_map>
+#include <vector>
 
 // currently available shell - cash
 class Cash {
@@ -14,8 +15,9 @@ class Cash {
     static void setup_signals();
     static void reset_signals();
     static void wait_for_bg();
-    static void add_job(std::list<int> job);
+    static void add_pid(int pid);
+    static std::mutex finished;
 
   private:
-    static std::unordered_map<int, std::list<int>> jobs;
+    static std::vector<int> jobs;
 };

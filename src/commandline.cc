@@ -6,7 +6,6 @@
 #include <array>
 #include <fcntl.h>
 #include <iostream>
-#include <list>
 #include <sys/wait.h>
 
 void Command::set_input(fd input) {
@@ -34,8 +33,15 @@ std::ostream &operator<<(std::ostream &os, const Command &obj) {
     os << "input: " << obj.input << ", ";
     os << "output: " << obj.output << ", ";
     os << "background: " << !obj.wait << ", ";
-    for (auto &elem : obj.calls) {
-        os << *elem << "| ";
+    auto it = obj.calls.begin();
+    if (it == obj.calls.end()) {
+        os << ")";
+        return os;
+    }
+    os << **it;
+    it++;
+    for (; it != obj.calls.end(); it++) {
+        os << " | " << **it;
     }
     os << ")";
     return os;
@@ -50,69 +56,68 @@ void Command::exec() {
         throw ExecError{"the output or input is not set"};
     }
     int pid = -1;
-    switch (calls.size()) {
-    case 0:
+    if (calls.size() == 0) {
         return;
-    default: {
-        std::array<int, 2> fd1 = {input, 0};
-        std::array<int, 2> fd2 = {0, output};
-        std::array<std::array<int, 2>, 2> fds = {fd1, fd2};
-        std::list<int> job;
-        int which_pipe = 0;
-        size_t i = 0;
-        // alternate between the two pipes as input and output
-        for (auto &call : calls) {
-            which_pipe = 1 - which_pipe;
-            int this_pipe = which_pipe;
-            int other_pipe = 1 - which_pipe;
-            int error = pipe(fds[this_pipe].data());
-            if (error == -1) {
-                throw ExecError{"error creating pipe"};
-            }
-            if (i == calls.size() - 1) {
-                fds[this_pipe][WRITE_END] = output;
-            }
-            auto &val = *call;
-            if (typeid(val) == typeid(Call)) {
-                pid = fork();
-            } else {
-                pid = 0;
-            }
-            if (pid == -1) {
-                throw ExecError{"error forking"};
-            }
-            if (pid == 0) {
-                close_fd(fds[other_pipe][WRITE_END]);
-                close_fd(fds[this_pipe][READ_END]);
-                try {
-                    call->exec(fds[other_pipe][READ_END],
-                               fds[this_pipe][WRITE_END]);
+    }
+    std::array<int, 2> fd1 = {input, 0};
+    std::array<int, 2> fd2 = {0, output};
+    std::array<std::array<int, 2>, 2> fds = {fd1, fd2};
+    std::vector<int> job;
+    int which_pipe = 0;
+    size_t i = 0;
+    // alternate between the two pipes as input and output
+    for (auto &call : calls) {
+        which_pipe = 1 - which_pipe;
+        int this_pipe = which_pipe;
+        int other_pipe = 1 - which_pipe;
+        int error = pipe(fds[this_pipe].data());
+        if (error == -1) {
+            throw ExecError{"error creating pipe"};
+        }
+        if (i == calls.size() - 1) {
+            fds[this_pipe][WRITE_END] = output;
+        }
+        auto &val = *call;
+        if (typeid(val) == typeid(ShellBuiltinAlias) ||
+            typeid(val) == typeid(ShellBuiltinCd)) {
+            pid = -2;
+        } else {
+            pid = fork();
+        }
+        if (pid == -1) {
+            throw ExecError{"error forking"};
+        } else if (pid == 0) {
+            close_fd(fds[other_pipe][WRITE_END]);
+            close_fd(fds[this_pipe][READ_END]);
+            try {
+                call->exec(fds[other_pipe][READ_END],
+                           fds[this_pipe][WRITE_END]);
 
-                } catch (ExecError &e) {
-                    std::cerr << e.what();
-                    exit(1);
-                }
+            } catch (ExecError &e) {
+                std::cerr << e.what();
+                exit(1);
             }
-            for (int fd : fds[other_pipe]) {
-                close_fd(fd);
-            }
-            if (wait && pid > 0) {
-                waitpid(pid, nullptr, NO_OPTION);
-            } else if (!wait && pid > 0) {
-                job.push_back(pid);
-            }
-            i++;
+        } else if (pid == -2) {
+            close_fd(fds[other_pipe][WRITE_END]);
+            close_fd(fds[this_pipe][READ_END]);
+            call->exec(fds[other_pipe][READ_END], fds[this_pipe][WRITE_END]);
         }
-        if (!wait) {
-            Cash::add_job(std::move(job));
+        for (int fd : fds[other_pipe]) {
+            close_fd(fd);
         }
-        for (auto arr : fds) {
-            for (int fd : arr) {
-                close_fd(fd);
-            }
+        if (wait && pid > 0) {
+            job.push_back(pid);
         }
+        i++;
+    }
+    for (auto pid : job) {
+        waitpid(pid, nullptr, NO_OPTION);
+    }
 
-    } break;
+    for (auto arr : fds) {
+        for (int fd : arr) {
+            close_fd(fd);
+        }
     }
     // as the input and output are closed now do not use them again
     input = -1;

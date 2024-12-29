@@ -6,5 +6,3 @@
     [x] handle SIGINT (to send ^C to jobs and not stop the shell)
     [ ] SIGINT not to bg processes
     [ ] ignore SIGTERM
-- maybe wait for zombie processes
-- builtins in pipe also as fork?
