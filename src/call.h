@@ -8,6 +8,7 @@ class Call {
   protected:
     std::string command;
     std::vector<std::string> args;
+    void setup_fds(fd input, fd output);
 
   public:
     Call(const Call &) = default;

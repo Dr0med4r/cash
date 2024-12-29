@@ -3,17 +3,18 @@
 #include <cerrno>
 #include <csignal>
 #include <cstddef>
+#include <cstdio>
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <ostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 void ShellBuiltinPwd::exec(int fd1, int fd2) {
-    close_fd(fd1);
-    close_fd(fd2);
+    setup_fds(fd1, fd2);
     std::cout << std::filesystem::current_path() << "\n";
-    ;
+    exit(0);
 }
 
 void ShellBuiltinCd::exec(int fd1, int fd2) {
@@ -142,4 +143,5 @@ void ShellBuiltinKill::exec(int fd1, int fd2) {
             break;
         }
     }
+    exit(0);
 }

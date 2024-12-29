@@ -23,6 +23,15 @@ void Call::resolve_alias() {
                       replacement.end());
 }
 
+void Call::setup_fds(fd input, fd output) {
+    // input from input and output to output
+    // dup2 does nothing if fd and fd2 are the same
+    dup2(input, STDIN_FILENO);
+    close_fd(input);
+    dup2(output, STDOUT_FILENO);
+    close_fd(output);
+}
+
 // executes the command in the path with the current environment
 //
 // returns the pid of the child
@@ -38,12 +47,7 @@ void Call::exec(fd input, fd output) {
         c_args[i + 1] = args.at(i).data();
     }
     c_args[args.size() + 1] = nullptr;
-    // input from input and output to output
-    // dup2 does nothing if fd and fd2 are the same
-    dup2(input, STDIN_FILENO);
-    close_fd(input);
-    dup2(output, STDOUT_FILENO);
-    close_fd(output);
+    setup_fds(input, output);
     execvp(command.c_str(), c_args);
     std::stringstream msg;
     msg << "executing " << *this << " failed: ";
