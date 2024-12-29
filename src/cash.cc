@@ -22,7 +22,6 @@ std::mutex Cash::finished = std::mutex{};
 void fin_action(int, siginfo_t* info, void*) {
     {
         std::lock_guard<std::mutex> lock(Cash::finished);
-        printf("add pid: %d\n", info->si_pid);
         Cash::add_pid(info->si_pid);
     }
 }
