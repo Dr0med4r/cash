@@ -1,8 +1,27 @@
-# TODO
+# Features
+- Redirection 
+    - `echo hi>test.txt`
+    - `cat < test.txt`  - "hi"
+- Pipes
+    - `touch test`
+    - `touch tt`
+    - `ls | grep test | wc -l` - "1"
+- Background
+    - `sleep 3&`
+    - zombie processes are removed after enter
+- cd
 - kill
-    [x] basic functionality
-    [ ] maybe relative pids (%1)
-- signal action
-    [x] handle SIGINT (to send ^C to jobs and not stop the shell)
-    [ ] SIGINT not to bg processes
-    [ ] ignore SIGTERM
+    - `sleep 20&`
+    - `ps`
+    - `kill 2 ...`
+- pwd
+- alias
+    - `alias wl wc -l`
+    - `alias ll ls -l`
+    - `alias` - "wl='wc -l'\n ll='ls -l'"
+    - `alias wl` - "wl='wc -l'"
+    - `touch test`
+    - `ls | wl` - "1"
+- unalias
+    - `unalias wl`
+    - `unalias` - Too few arguments
