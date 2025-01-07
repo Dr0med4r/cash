@@ -1,6 +1,8 @@
 %require "3.2"
 %language "c++"
 
+%define parse.lac full
+%define parse.error detailed
 %define api.value.type variant
 %define api.token.constructor
 %parse-param {Command* command}
@@ -39,9 +41,9 @@ int open_output(std::string file);
 %start cmd_line
 %nterm <Call*> command simple
 %nterm <Command*> pipeline
-%token  EXIT PIPE INPUT_REDIR OUTPUT_REDIR BACKGROUND
+%token EXIT PIPE INPUT_REDIRECTION OUTPUT_REDIRECTION BACKGROUND
 %token <std::string> STRING
-%token NL 0
+%token NEW_LINE 0
 
 
 %%
@@ -88,7 +90,7 @@ command     : command[left] STRING
 redir       : input_redir output_redir
         ;
 
-output_redir:    OUTPUT_REDIR STRING
+output_redir:    OUTPUT_REDIRECTION STRING
                 { 
                     int output = open_output($STRING);
                     command->set_output(output);
@@ -98,7 +100,7 @@ output_redir:    OUTPUT_REDIR STRING
 				}
         ;
 
-input_redir:    INPUT_REDIR STRING
+input_redir:    INPUT_REDIRECTION STRING
                 {
                     int input = open_input($STRING);
                     command->set_input(input);

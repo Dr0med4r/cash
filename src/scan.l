@@ -30,22 +30,22 @@ std::string yyinput = "";
 %option noyywrap noinput nounput
 %option outfile="scan.cc"
 
-NL              [\n]
-PIPE            [|]
-OUTPUT_REDIR    [>]
-INPUT_REDIR     [<]
-BG              [&]
-CHAR            [0-9a-zA-Z_/\-\*\.]
-SPACE           [\032]
+NEW_LINE                [\n]
+PIPE                    [|]
+OUTPUT_REDIRECTION      [>]
+INPUT_REDIRECTION       [<]
+BG                      [&]
+CHAR                    [0-9a-zA-Z_/\-\*\.]
+SPACE                   [\032]
 %% 
 
-exit            { return yy::parser::make_EXIT(); }
-{NL}            { return yy::parser::make_NL(); }
-{BG}            { return yy::parser::make_BACKGROUND(); }
-{PIPE}          { return yy::parser::make_PIPE();}
-{OUTPUT_REDIR}  { return yy::parser::make_OUTPUT_REDIR(); }
-{INPUT_REDIR}   { return yy::parser::make_INPUT_REDIR(); }
-{CHAR}+         { return yy::parser::make_STRING(yytext); }
-<<EOF>>         { return yy::parser::make_EXIT(); }
-.               ;
+exit                    { return yy::parser::make_EXIT(); }
+{NEW_LINE}              { return yy::parser::make_NEW_LINE(); }
+{BG}                    { return yy::parser::make_BACKGROUND(); }
+{PIPE}                  { return yy::parser::make_PIPE();}
+{OUTPUT_REDIRECTION}    { return yy::parser::make_OUTPUT_REDIRECTION(); }
+{INPUT_REDIRECTION}     { return yy::parser::make_INPUT_REDIRECTION(); }
+{CHAR}+                 { return yy::parser::make_STRING(yytext); }
+<<EOF>>                 { return yy::parser::make_EXIT(); }
+.                   ;
 %%
