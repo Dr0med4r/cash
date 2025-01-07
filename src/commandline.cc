@@ -1,7 +1,8 @@
 #include "commandline.h"
-#include "builtins.h"
 #include "cash.h"
 #include "errors.h"
+#include "alias.h"
+#include "cd.h"
 
 #include <array>
 #include <fcntl.h>

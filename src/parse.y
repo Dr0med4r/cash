@@ -24,7 +24,10 @@
 #include <iostream> 
 #include <sstream> 
 #include "errors.h"
-#include "builtins.h"
+#include "cd.h"
+#include "kill.h"
+#include "alias.h"
+#include "pwd.h"
 yy::parser::symbol_type yylex();
 int open_input(std::string file);
 int open_output(std::string file);

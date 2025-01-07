@@ -1,18 +1,6 @@
-#include <cerrno>
-#include <csignal>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <fcntl.h>
 #include <iostream>
-#include <mutex>
-#include <readline/history.h>
-#include <readline/readline.h>
-#include <sys/signal.h>
 #include <sys/wait.h>
-#include <vector>
 
-#include "builtins.h"
 #include "cash.h"
 
 std::vector<int> Cash::jobs = std::vector<int>{};
@@ -26,6 +14,7 @@ void fin_action(int, siginfo_t* info, void*) {
     }
 }
 
+// set the required signal handling for shell usage
 void Cash::setup_signals() {
     struct sigaction act = {};
     act.sa_handler = SIG_IGN;
@@ -46,6 +35,8 @@ void Cash::setup_signals() {
         exit(1);
     }
 }
+
+// reset the signals that the Process can be killed by ^C
 void Cash::reset_signals() {
     struct sigaction act = {};
     act.sa_handler = SIG_DFL;
@@ -63,6 +54,7 @@ void Cash::reset_signals() {
     }
 }
 
+// remove all current zombie processes
 void Cash::wait_for_bg() {
     while (jobs.size() > 0) {
         int pid;

@@ -3,10 +3,9 @@
 #include <readline/readline.h>
 
 #include "../parse.hh"
-#include "builtins.h"
+#include "cash.h"
 #include "commandline.h"
 #include "errors.h"
-#include "cash.h"
 
 // currently available shell - cash
 //
@@ -35,7 +34,7 @@ int main(void) {
             add_history(result.data());
         }
         // the result of readline does not contain a newline at the end but the
-        // parser expects one but add it after adding the result to the history
+        // parser expects one
         result.push_back('\n');
         yyinput = result;
         Command command;

@@ -1,5 +1,5 @@
 
-SRC = parse.cc scan.cc cash.cc commandline.cc builtins.cc call.cc main.cc
+SRC = parse.cc scan.cc cash.cc commandline.cc builtins.cc call.cc main.cc cd.cc kill.cc alias.cc pwd.cc
 OBJ = ${SRC:.cc=.o} 
 DEP = $(SRC:.cc=.d)
 BIN = cash
@@ -36,6 +36,6 @@ run: ${BIN}
 	./${BIN}
 
 clean: 
-	rm -f ${OBJ} ${DEP} parse.hh parse.cc scan.cc
+	rm -f ${BIN} ${OBJ} ${DEP} parse.hh parse.cc scan.cc
 
 -include $(DEP)

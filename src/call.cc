@@ -1,11 +1,10 @@
 #include "call.h"
-#include "builtins.h"
+#include "alias.h"
 #include "cash.h"
 
-#include <csignal>
-#include <iostream>
 #include <sstream>
 
+// replace the call and insert additional arguments
 void Call::resolve_alias() {
     if (!ShellBuiltinAlias::contains_alias(command)) {
         return;
