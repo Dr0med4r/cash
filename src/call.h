@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <set>
 
 typedef int fd;
 
@@ -26,5 +27,5 @@ class Call {
     void add_arg(std::string arg);
 
   private:
-    void resolve_alias();
+    void resolve_alias(std::set<std::string> already_resolved);
 };

@@ -2,24 +2,27 @@
 #include "alias.h"
 #include "cash.h"
 
+#include <set>
 #include <sstream>
 
 // replace the call and insert additional arguments
-void Call::resolve_alias() {
-    if (!ShellBuiltinAlias::contains_alias(command)) {
+void Call::resolve_alias(std::set<std::string> already_resolved) {
+    if (!ShellBuiltinAlias::contains_alias(command) ||
+        already_resolved.contains(command)) {
         return;
     }
+    already_resolved.insert(command);
     std::vector<std::string> replacement =
         ShellBuiltinAlias::get_alias(command);
     if (replacement.size() == 0) {
         return;
     }
     this->command = replacement.front();
-    if (replacement.size() < 2) {
-        return;
+    if (replacement.size() >= 2) {
+        this->args.insert(this->args.begin(), ++replacement.begin(),
+                          replacement.end());
     }
-    this->args.insert(this->args.begin(), ++replacement.begin(),
-                      replacement.end());
+    resolve_alias(already_resolved);
 }
 
 void Call::setup_fds(fd input, fd output) {
@@ -38,7 +41,7 @@ void Call::setup_fds(fd input, fd output) {
 // closes the given filedescriptors if they are not stdin or stdout
 void Call::exec(fd input, fd output) {
     Cash::reset_signals();
-    resolve_alias();
+    resolve_alias(std::set<std::string>{});
     char **c_args;
     c_args = (char **)malloc(sizeof(char *) * (args.size() + 2));
     c_args[0] = command.data();
